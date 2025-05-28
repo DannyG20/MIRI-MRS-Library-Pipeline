@@ -252,34 +252,13 @@ def find_nearest_grid_fringe(file,cent_alpha,cent_beta,band,fringedir,vers):
     dithdir = hdu[0].header['DITHDIRC']
     n = (scifile[i].split('_')[2])[-1]
 
-    if subbandl == 'SHORT':
-        subband = 'A'
-    elif subbandl == 'MEDIUM':
-        subband = 'B'
-    else:
-        subband = 'C'
-
-    if detector == 'MIRIFUSHORT':
-        band = ['1{}'.format(subband),'2{}'.format(subband)]
-    else:
-        band = ['3{}'.format(subband),'4{}'.format(subband)]
-        
-    data = hdu['SCI'].data
-
     hdu.close()
-
-    alpha = {}
-    beta = {}
     
-    for b in band:        
-        if b[0] in ['1','2','3']:
-        
-            fringe_file[b,n] = []
-            reffilelist = []
+    reffilelist = []
 
-            for filename in listdir(fringedir):
-                if filename.startswith('{}_{}_PS_FRINGE_{}{}'.format(detector,subbandl,dithdir,n)) and filename.endswith('{}.fits'.format(vers)):
-                    reffilelist.append(filename)
+    for filename in listdir(fringedir):
+        if filename.startswith('{}_{}_PS_FRINGE_{}{}'.format(detector,subbandl,dithdir,n)) and filename.endswith('{}.fits'.format(vers)):
+            reffilelist.append(filename)
 
     diff = 1000
     
