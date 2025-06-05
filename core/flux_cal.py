@@ -40,8 +40,6 @@ def gen_custom_pixel_flat(rate_file,dist_dir,cache_dir,alphadic,betadic,num=1,di
     ref_flat = fits.open(cache_dir+'/references/jwst/miri/'+ref_name)
 
     d2cMaps = {}
-    alphadic = {}
-    betadic = {}
     coeff_img = {}
     beta_frac = {}
     maps = {}
@@ -59,7 +57,7 @@ def gen_custom_pixel_flat(rate_file,dist_dir,cache_dir,alphadic,betadic,num=1,di
         d2cMaps[b] = d2cMapping(b[0]+subbandl,dist_dir,slice_transmission='10pc',fileversion = dist_ver)
         
         # Find slice fraction
-        beta_frac[b] = find_slice_cent(betadic[b[0]],d2cMaps[b]['betaMap'],d2cMaps[b]['sliceMap'],b)
+        beta_frac[b] = find_slice_cent(betadic[b[0]+subbandl],d2cMaps[b]['betaMap'],d2cMaps[b]['sliceMap'],b[0]+subbandl)
 
         # Get coefficient file
         coeff_img[b] = open_coeff_ref(b,num,version)
@@ -96,7 +94,7 @@ def gen_custom_pixel_flat(rate_file,dist_dir,cache_dir,alphadic,betadic,num=1,di
     ref_flat.close()
     
 # main function to call
-def gen_photom(rate_file,dist_dir,alphadic,betadic,num=1,version='01.00.00',dist_ver='flt7',ref_available=False):
+def gen_photom(rate_file,dist_dir,alphadic,betadic,num=1,version='01.00.00',dist_ver='flt8',ref_available=False):
     hdu_rate = fits.open(rate_file)
 
     detector = hdu_rate[0].header['DETECTOR']
@@ -188,13 +186,32 @@ def find_ref_flat(band,crds_dir):
     
     return reffile
 
+def find_ref_photom(band,version):
+
+    crdsDir = './references/PHOTOM/'
+
+    subband = band[1:]
+
+    reffile_list = []
+
+    if band[0] in ['1','2']:
+        det = 'MIRIFUSHORT'
+    else:
+        det = 'MIRIFULONG'
+
+    for filename in listdir(crdsDir):
+        if filename.startswith(det +'_'+ subband) and filename.endswith(version+'.fits'):
+            reffile_list.append(filename)
+
+    return reffile_list
+
 def open_coeff_ref(band,dithnum,version):
     if band[0] in ['1','2']:
         ifu = 'SHORT'
     else:
         ifu = 'LONG'
     
-    coeffs = np.loadtxt('./reference/PIXEL/MIRIFU{}_{}{}_PS_1DPIXELFLAT_{}_{}.txt'.format(ifu,band[0],band[1:],dithnum,version))
+    coeffs = np.loadtxt('./references/PIXEL/MIRIFU{}_{}{}_PS_1DPIXELFLAT_{}_{}.txt'.format(ifu,band[0],band[1:],dithnum,version))
     
     return coeffs
 

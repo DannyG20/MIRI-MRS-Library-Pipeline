@@ -62,7 +62,7 @@ def gen_custom_linearity(rate_file,dist_dir,crds_dir,num=1,file_ver='v2',dist_ve
             ypos,xpos = detpixel_trace_compactsource(rate,b+subbandl,d2cMaps[b],offset_slice=0)
             sliceID = d2cMaps[b]['sliceMap'][ypos[512],xpos[512]] - 100*int(b[0])
             
-            ypos,xpos = detpixel_trace(b,d2cMaps[b],sliceID=sliceID,alpha_pos=alphadic[b[0]]
+            ypos,xpos = detpixel_trace(b,d2cMaps[b],sliceID=sliceID,alpha_pos=alphadic[b[0]])
             
             alpha_off_list,y_list,x_list = [],[],[]
             
@@ -126,7 +126,7 @@ def find_nearest_grid(rate_file,dist_dir,lin_dir,num=1,lin_version='01.05.00',di
                 subbandl = 'C'
             
             # Get coordinate maps
-            d2cMaps[b] = d2cMapping(b[0]+subbandl,dist_dir,slice_transmission='10pc',fileversion = "flt7")
+            d2cMaps[b] = d2cMapping(b[0]+subbandl,dist_dir,slice_transmission='10pc',fileversion = dist_ver)
             
             # Centroid input data
             alphadic[b[0]],betadic[b[0]] = return_centroids(rate,b,d2cMaps[b])
@@ -250,7 +250,7 @@ def find_nearest_grid_fringe(file,cent_alpha,cent_beta,band,fringedir,vers):
     detector = hdu[0].header['DETECTOR']
     subbandl = hdu[0].header['BAND']
     dithdir = hdu[0].header['DITHDIRC']
-    n = (scifile[i].split('_')[2])[-1]
+    n = (file.split('_')[2])[-1]
 
     hdu.close()
     
