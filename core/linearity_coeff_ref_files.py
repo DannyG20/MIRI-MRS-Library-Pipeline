@@ -250,7 +250,7 @@ def find_nearest_grid_fringe(file,cent_alpha,cent_beta,band,fringedir,vers):
     detector = hdu[0].header['DETECTOR']
     subbandl = hdu[0].header['BAND']
     dithdir = hdu[0].header['DITHDIRC']
-    n = (file.split('_')[2])[-1]
+    n = ((file.split('/')[-1]).split('_')[2])[-1]
 
     hdu.close()
     
@@ -265,24 +265,42 @@ def find_nearest_grid_fringe(file,cent_alpha,cent_beta,band,fringedir,vers):
     diffalpha = []
     diffbeta = []
     filelist = []
-    
+
     for filename in reffilelist:
         hdu = fits.open(fringedir+filename)
         refalpha = hdu[1].header['A{}'.format(band[0])]
         refbeta = hdu[1].header['B{}'.format(band[0])]
         hdu.close()
-
-        diffalpha.append(refalpha-cent_alpha)
-        diffbeta.append(refbeta-cent_beta)
+           
+        if cent_alpha is not None:
+            diffalpha.append(refalpha-cent_alpha)
+            diffbeta.append(refbeta-cent_beta)
+        else:
+            diffalpha.append(refalpha)
+            diffbeta.append(refbeta)
+            
         filelist.append(filename)
+        
+    if cent_alpha is not None:
 
-    lowest = sorted(np.abs(diffbeta))[:3]
+        lowest = sorted(np.abs(diffbeta))[:3]
 
-    for i in range(len(diffbeta)):
-        if np.abs(diffbeta[i]) in lowest:
-            if np.abs(diffalpha[i]) < diff:
-                reffile = filelist[i]
-                diff = np.abs(diffalpha[i])
+        for i in range(len(diffbeta)):
+            if np.abs(diffbeta[i]) in lowest:
+                if np.abs(diffalpha[i]) < diff:
+                    reffile = filelist[i]
+                    diff = np.abs(diffalpha[i])
+    else:
+        
+        sort_beta = sorted(np.abs(diffbeta))[3:6]
+        alphalist = []
+        fileoption = []
+
+        for i in range(len(diffbeta)):
+            if np.abs(diffbeta[i]) in sort_beta:
+                alphalist.append(diffalpha[i])
+                fileoption.append(filelist[i])
+        reffile = (np.array(fileoption)[np.array(alphalist).argsort()])[1]
     
     return reffile
                                        
