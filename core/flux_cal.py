@@ -53,29 +53,33 @@ def gen_custom_pixel_flat(rate_file,dist_dir,cache_dir,alphadic,betadic,num=1,di
         subbandl = 'C'
 
     for b in band:
-        # Get coordinate maps
-        d2cMaps[b] = d2cMapping(b[0]+subbandl,dist_dir,slice_transmission='10pc',fileversion = dist_ver)
-        
-        # Find slice fraction
-        beta_frac[b] = find_slice_cent(betadic[b[0]+subbandl],d2cMaps[b]['betaMap'],d2cMaps[b]['sliceMap'],b[0]+subbandl)
+	if b in ['4MEDIUM','4LONG']:
+		maps[b][:,:] = 1
+	else:
 
-        # Get coefficient file
-        coeff_img[b] = open_coeff_ref(b,num,version)
+        	# Get coordinate maps
+        	d2cMaps[b] = d2cMapping(b[0]+subbandl,dist_dir,slice_transmission='10pc',fileversion = dist_ver)
+        
+        	# Find slice fraction
+        	beta_frac[b] = find_slice_cent(betadic[b[0]+subbandl],d2cMaps[b]['betaMap'],d2cMaps[b]['sliceMap'],b[0]+subbandl)
 
-        # Create pixel map
-        Xmap = beta_frac[b]
+        	# Get coefficient file
+        	coeff_img[b] = open_coeff_ref(b,num,version)
+
+        	# Create pixel map
+        	Xmap = beta_frac[b]
         
-        maps[b] = np.empty(np.shape(rate))
+        	maps[b] = np.empty(np.shape(rate))
         
-        # Fill map
-        for y in range(len(d2cMaps[b]['lambdaMap'][:,0])):
-            for x in range(len(d2cMaps[b]['lambdaMap'][0,:])):
-                maps[b][y,x] = polyval2d(Xmap, d2cMaps[b]['lambdaMap'][y,x], coeff_img[b])
+        	# Fill map
+        	for y in range(len(d2cMaps[b]['lambdaMap'][:,0])):
+            	for x in range(len(d2cMaps[b]['lambdaMap'][0,:])):
+                	maps[b][y,x] = polyval2d(Xmap, d2cMaps[b]['lambdaMap'][y,x], coeff_img[b])
                        
-        id1 = np.where((d2cMaps[b]['lambdaMap'] == 0) | (d2cMaps[b]['lambdaMap'] == np.nan))
-        maps[b][id1] = 1
-        if b in ['4MEDIUM','4LONG']:
-            maps[b][:,:] = 1
+        	id1 = np.where((d2cMaps[b]['lambdaMap'] == 0) | (d2cMaps[b]['lambdaMap'] == np.nan))
+        	maps[b][id1] = 1
+        
+            
 
     # Combine maps
     if detector == 'MIRIFUSHORT':
