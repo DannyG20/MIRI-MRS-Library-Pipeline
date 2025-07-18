@@ -53,6 +53,9 @@ def gen_custom_pixel_flat(rate_file,dist_dir,cache_dir,alphadic,betadic,num=1,di
         subbandl = 'C'
 
     for b in band:
+
+	maps[b] = np.empty(np.shape(rate))
+
 	if b in ['4MEDIUM','4LONG']:
 		maps[b][:,:] = 1
 	else:
@@ -68,8 +71,6 @@ def gen_custom_pixel_flat(rate_file,dist_dir,cache_dir,alphadic,betadic,num=1,di
 
         	# Create pixel map
         	Xmap = beta_frac[b]
-        
-        	maps[b] = np.empty(np.shape(rate))
         
         	# Fill map
         	for y in range(len(d2cMaps[b]['lambdaMap'][:,0])):
