@@ -294,15 +294,19 @@ def find_nearest_grid_fringe(file,cent_alpha,cent_beta,band,fringedir,vers):
         
         sort_beta = sorted(np.abs(diffbeta))[3:6]
         alphalist = []
+        betalist = []
         fileoption = []
 
         for i in range(len(diffbeta)):
             if np.abs(diffbeta[i]) in sort_beta:
                 alphalist.append(diffalpha[i])
+                betalist.append(diffbeta[i])
                 fileoption.append(filelist[i])
         reffile = (np.array(fileoption)[np.array(alphalist).argsort()])[1]
+        cent_alpha = (np.array(alphalist)[np.array(alphalist).argsort()])[1]
+        cent_beta = (np.array(betalist)[np.array(alphalist).argsort()])[1]
     
-    return reffile
+    return reffile, cent_alpha, cent_beta
                                        
 # Get coefficient per alpha offset
 def spline2d_get_curve(coeff_img,x,y):
