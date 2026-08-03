@@ -23,7 +23,7 @@ The optimal extraction code requires directory containing _rate_ files and _cal_
 In order to extract a companion spectrum, a PSF-subtracted _cal_ file along with the aforementioned files must be provided. The directory must be set separately from the other files. If running an extraction on a companion, set `PSFsub` to `True`. An offset in $\alpha$ and $\beta$ (in arcsec) compared to the central star must be provided. `peakfitlist` then indicates how many peaks to fit, provided as a list with the indices corresponding to the different channels (i.e., \[channel1, channel2, ...\]). It is advised to set the aperture correction to `True`, and the aperture size to 1.2.
 
 ______
-#Diagnostics
+# Diagnostics
 <ins>To do: </ins>
 - Provide a map of the science data compared to the grid. This will give the user a sense of how well they can expect the corrections to perform, where science data located within the grid will benefit more from the special reference files.
 - Allow the option to save the fitted PSFs in the optimal extraction code. These PSFs can be compared to the science data to check whether the fits make sense.
