@@ -20,4 +20,4 @@ Running stage 2 simply requires an input _rate_ file, which is the product of st
 # Running optimal extraction
 The optimal extraction code requires directory containing _rate_ files and _cal_ files to run. The user then provides the list of bands that these files are associated to. Note that the _cal_ files must have been reduced using the continuous reference files, which can be done in the second half of the stage 2 notebook.
 
-In order to extract a companion spectrum, a PSF-subtracted _cal_ file along with the aforementioned files must be provided.
+In order to extract a companion spectrum, a PSF-subtracted _cal_ file along with the aforementioned files must be provided. The directory must be set separately from the other files. If running an extraction on a companion, set \texttt{PSF sub} to \texttt{True}. An offset in $\alpha$ and $\beta$ (in arcsec) compared to the central star must be provided. \texttt{peakfitlist} then indicates how many peaks to fit, provided as a list with the indices corresponding to the different channels (i.e., \[channel1, channel2, ...\]). It is advised to set the aperture correction to \texttt{True}, and the aperture size to 1.2.
