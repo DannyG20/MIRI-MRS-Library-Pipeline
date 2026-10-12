@@ -11,6 +11,7 @@ from scipy.ndimage import gaussian_filter1d
 from os import listdir,path,makedirs
 from numpy.random import poisson
 import miricoord.mrs.mrs_tools as coord
+import matplotlib.pyplot as plt
 
 def _create_incremental_alphaMap(band, d2cMaps):
     
@@ -102,6 +103,10 @@ def wave_norm(data_array,err,band,lambdaMap):
     variance = np.zeros(np.shape(data_array))
     
     row_variance = np.zeros(len(data_array[:,0]))
+    
+    lambmin = np.nanmin(lambdaMap[np.where(lambdaMap!=0)]) # micron
+    lambmax = np.nanmax(lambdaMap) # micron
+    lambcens= np.arange(lambmin,lambmax,(lambmax-lambmin)/1024.)
 
     nwavs = len(lambcens)
     
@@ -1082,7 +1087,7 @@ def find_file(band,crdsDir,file='readnoise'):
     
     return ref_file
 
-def opt_extract(bandlist,rateDir,calDir,outDir,dist_ver,psfVer,bright=False,indith=True,PSFsub=False,calSubDir=None,offa=None,offb=None,peakfitlist=None,do_apcorr=False,apsize=1.2):
+def opt_extract(bandlist,rateDir,calDir,outDir,dist_ver,psfVer,diagnose=False,bright=False,indith=True,PSFsub=False,calSubDir=None,offa=None,offb=None,peakfitlist=None,do_apcorr=False,apsize=1.2):
 
     ## Gather files to run
     test_list = {}
@@ -1093,6 +1098,10 @@ def opt_extract(bandlist,rateDir,calDir,outDir,dist_ver,psfVer,bright=False,indi
 
     if not path.exists(outDir):
         makedirs(outDir)
+
+    if diagnose:
+        not path.exists(outDir+'diagnostics/'):
+            makedirs(outDir+'diagnostics/')
     
     for b in bandlist:
         print(b)
@@ -1148,7 +1157,7 @@ def opt_extract(bandlist,rateDir,calDir,outDir,dist_ver,psfVer,bright=False,indi
     d2cMaps = {}
 
     for b in bandlist:
-        d2cMaps[b] = d2cMapping(b,'./references/DISTORTION/',slice_transmission='10pc',fileversion = "flt9")
+        d2cMaps[b] = d2cMapping(b,'./references/DISTORTION/',slice_transmission='10pc',fileversion = dist_ver)
 
     ## Find where observation is located
     alpha = {}
@@ -1171,11 +1180,17 @@ def opt_extract(bandlist,rateDir,calDir,outDir,dist_ver,psfVer,bright=False,indi
             
             test_rate = fits.getdata(test_list[b][i])
             dith = int((test_list[b][i].split('/')[-1]).split('_')[2][-1])
+
+            try:
+                popt_alpha, popt_beta = centroiding(test_rate,d2cMaps[b],b)
+        
+                alpha[b][dith] = np.nanmedian(popt_alpha(lambcens[b]))
+                beta[b][dith] = np.nanmedian(popt_beta(lambcens[b]))
     
-            popt_alpha, popt_beta = centroiding(test_rate,d2cMaps[b],b)
-    
-            alpha[b][dith] = np.nanmedian(popt_alpha(lambcens[b]))
-            beta[b][dith] = np.nanmedian(popt_beta(lambcens[b]))
+                print(alpha[b][dith],beta[b][dith])
+            except:
+                alpha[b][dith],beta[b][dith] = None,None
+                print('Cannot centroid. Using nominal dither position as initial guess.')
 
     ## Start optimal extraction
     spec_optimal = {}
@@ -1292,6 +1307,20 @@ def opt_extract(bandlist,rateDir,calDir,outDir,dist_ver,psfVer,bright=False,indi
     
                 if indith:
                     PSF_model_set,alphas,betas = get_PSF_set_int(b[0]+bandsub,dither,dithnum,version = psfVer)
+
+                    if (alpha[b][dithnum] is None) | (beta[b][dithnum] is None):
+                        sci_pos[0,:] = alphas[1,:]
+                        sci_pos[1,:] = betas[1,:]
+
+                    if diagnose:
+                        plt.figure(figsize=(5,6),constrained_layout=True)
+                        for x in range(len(alphas[:,0])):
+                            plt.plot(alphas[x,512],betas[x,512],lw=0,marker='o',c='k')
+                            
+                        plt.plot(sci_pos[0,512],sci_pos[1,512],lw=0,marker='o',c='red')
+                        plt.xlabel(r'$\alpha$-coordinate',fontsize=12)
+                        plt.ylabel(r'$\beta$-coordinate',fontsize=12)
+                        plt.savefig(outDir+'diagnostics/centroids_{}_dither{}.png'.format(b,dithnum),dpi=200)
     
                 else:
     
@@ -1677,6 +1706,9 @@ def opt_extract(bandlist,rateDir,calDir,outDir,dist_ver,psfVer,bright=False,indi
                 norm_PSF[norm_PSF < 0] = 0
     
             fit_PSF = np.zeros((np.shape(test_cal_band)))
+
+            if diagnose:
+                np.savetxt(outDir+'diagnostics/fitPSF_{}_dith{}.dat'.format(b,dithnum),PSF_avg)
             
             for n in range(nwavs):
                 
@@ -1798,7 +1830,7 @@ def opt_extract(bandlist,rateDir,calDir,outDir,dist_ver,psfVer,bright=False,indi
         med_spec = np.full((np.shape(lambcens[b])),np.nan)
         mean_spec = np.full((np.shape(lambcens[b])),np.nan)
     
-        dithlen = 4
+        dithlen = len(cal_list[b])
     
         for i in range(len(lambcens[b])):
             
@@ -1833,10 +1865,10 @@ def opt_extract(bandlist,rateDir,calDir,outDir,dist_ver,psfVer,bright=False,indi
 
         save_dic = {}
         save_dic['WAVELENGTH'] = lambcens[b][50:-50]
-        save_dic[1] = (spec_optimal[b][0][50:-50] * 10**6)
-        save_dic[2] = (spec_optimal[b][1][50:-50] * 10**6)
-        save_dic[3] = (spec_optimal[b][2][50:-50] * 10**6)
-        save_dic[4] = (spec_optimal[b][3][50:-50] * 10**6)
+        
+        for n in range(len(cal_list[b])):
+            save_dic[n+1] = (spec_optimal[b][n][50:-50] * 10**6)
+            
         save_dic['MEAN'] = mean_spec[50:-50] * 10**6
         save_dic['MEDIAN'] = med_spec[50:-50] * 10**6
         
