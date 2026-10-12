@@ -15,6 +15,8 @@ from .funcs import point_source_centroiding,detpixel_trace,detpixel_trace_compac
 import datetime
 from os import listdir
 from astropy.io import fits
+from jwst.stpipe import Step
+from jwst import datamodels
 
 # main function to call
 def gen_custom_linearity(rate_file,dist_dir,crds_dir,num=1,file_ver='v2',dist_ver='flt7'):
@@ -365,4 +367,30 @@ def spline2d_in_chunks(x,y,z,x_min,x_max,x_space,y_min,y_max,y_space,pad=0.01,fi
             
     return coeff_img
 
+class RampFitErrStep(Step):
+    spec = '''
+    '''
+    class_alias = 'rampfiterr'
 
+    def process(self, input_data):
+        with datamodels.open(input_data) as model:
+            result = model.copy()
+        sci = (result.data).astype(float)
+        
+        err_array = np.full((np.shape(sci[0,0,:,:])),np.nan)
+        diff_int = np.diff(sci[:,2:-1,:,:],axis=1)/2.775
+        
+        for y in range(len(diff_int[0,0,:,0])):
+            for x in range(len(diff_int[0,0,0,:])):
+                sig = 0
+                for i in range(len(diff_int[:,0,0,0])):
+                    sig += (np.nanstd(diff_int[i,:,y,x]))**2
+                    
+                err_array[y,x] = np.sqrt(sig)/len(diff_int[:,0,0,0])
+        
+        np.savetxt('./core/temp/err_array.dat',err_array)
+                
+        self.log.info('Determined error from ramp fit!')
+        self.log.info('Generated temporary error file.')
+        
+        return result
